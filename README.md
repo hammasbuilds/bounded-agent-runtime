@@ -6,8 +6,7 @@
   <a href="#what-is-bounded">What is bounded</a> &middot;
   <a href="#risk-is-a-property-of-the-tool">Risk per tool</a> &middot;
   <a href="#the-chaos-suite-is-the-project">The chaos suite</a> &middot;
-  <a href="#audit-and-replay">Audit and replay</a> &middot;
-  <a href="#problems-hit-while-building-this">Problems hit</a>
+  <a href="#audit-and-replay">Audit and replay</a> 
 </p>
 
 <p align="center">
@@ -229,25 +228,3 @@ only `COMPLETED` counts as success — which is why the headline is not a flatte
 
 `Hallucinates` completing is also deliberate: an invented tool name is an error handed
 back to the agent, not a crash.
-
-## Problems hit while building this
-
-**`AuditLog.record(kind, **data)` collided with its own callers.** Every budget stop
-passed `kind=` as payload, which clashed with the positional parameter name and raised
-`TypeError` — so the moment the runtime tried to log a stop, it crashed instead. *Fixed*
-by renaming the payload key; the audit log now records the ceiling that fired.
-
-**`ApprovalRequired` shadowed `BaseException.args`.** Assigning `self.args = args` and
-then calling `super().__init__(message)` silently replaced the tool arguments with the
-message string. The approval record was losing exactly the data a human needs *in order
-to approve* — an operator would have been asked to authorise "send_email" with no
-recipient and no body. *Fixed* by renaming to `tool_args`, with a test that asserts the
-arguments survive into the audit record.
-
-Both would have passed code review. Neither survived the first run of the test suite,
-which is the argument for writing the suite first.
-
-**A scripted planner that repeats one action trips loop detection — correctly.** The
-test asserting that approval lets work through was using it, so the run stopped before
-the approved action executed. That was a bad fixture rather than a bug, and it is worth
-recording because the distinction matters: the code was right and the test was wrong.
